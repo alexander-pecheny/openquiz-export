@@ -159,25 +159,7 @@ class Gui:
         root.mainloop()
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--url", "-u", required=True)
-    parser.add_argument("--tournament_id", "-t", type=int)
-    parser.add_argument("--venue_name", "-v", default="ХВИП")
-    use_wrapper = len(sys.argv) == 1 and TKINTER
-    if use_wrapper:
-        gui = Gui()
-        gui.create_tk()
-        if not gui.url:
-            print("Action cancelled.")
-            sys.exit(1)
-        gui_args = ["-u", gui.url.strip()]
-        if gui.tournament_id:
-            gui_args.extend(["-t", gui.tournament_id])
-        if gui.venue_name:
-            gui_args.extend(["-v", gui.venue_name])
-    else:
-        gui_args = []
+def single_action(parser, gui_args):
     args = parser.parse_args(gui_args or sys.argv[1:])
 
     parsed = urllib.parse.urlparse(args.url)
@@ -193,6 +175,34 @@ def main():
     filename = sanitize_title(title) + ".xlsx"
     print(filename)
     wb.save(filename)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--url", "-u", required=True)
+    parser.add_argument("--tournament_id", "-t", type=int)
+    parser.add_argument("--venue_name", "-v", default="ХВИП")
+    use_wrapper = len(sys.argv) == 1 and TKINTER
+    if use_wrapper:
+        first = True
+        gui_args = []
+        while first or gui_args:
+            first = False
+            gui = Gui()
+            gui.create_tk()
+            if not gui.url:
+                print("Action cancelled.")
+                sys.exit(1)
+            gui_args = ["-u", gui.url.strip()]
+            if gui.tournament_id:
+                gui_args.extend(["-t", gui.tournament_id])
+            if gui.venue_name:
+                gui_args.extend(["-v", gui.venue_name])
+            if gui_args:
+                single_action(parser, gui_args)
+    else:
+        gui_args = []
+        single_action(parser, gui_args)
 
 
 if __name__ == "__main__":

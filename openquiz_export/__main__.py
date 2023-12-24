@@ -3,14 +3,24 @@
 import argparse
 import json
 import re
+import sys
 import time
 import urllib.parse
 from collections import defaultdict
 from typing import NamedTuple, Optional
 
+try:
+    import tkinter as tk
+
+    TKINTER = True
+except ImportError:
+    TKINTER = False
+
 import openpyxl
 import requests
 from Levenshtein import distance
+
+from openquiz_export.version import __version__
 
 
 def now_ms():
@@ -56,9 +66,7 @@ class WbMaker:
                     continue
                 name = res["current"]["name"]
                 self.team_dict[name.lower()] = TeamTuple(
-                    id=res["team"]["id"],
-                    name=name,
-                    town=res["current"]["town"]["name"]
+                    id=res["team"]["id"], name=name, town=res["current"]["town"]["name"]
                 )
 
     def try_to_find_team(self, team_name):
@@ -67,12 +75,11 @@ class WbMaker:
             if lower in self.team_dict:
                 return self.team_dict[lower]
             else:
-                srt = sorted([
-                    (distance(lower, k), k)
-                    for k in self.team_dict
-                ])
+                srt = sorted([(distance(lower, k), k) for k in self.team_dict])
                 if srt[0][0] >= 5:
-                    print(f"team {team_name} not found in results, searching in rating...")
+                    print(
+                        f"team {team_name} not found in results, searching in rating..."
+                    )
                     return find_team_by_name(team_name)
                 else:
                     return self.team_dict[srt[0][1]]
@@ -110,12 +117,68 @@ def sanitize_title(title):
     return re.sub("[^a-zA-Zа-яА-ЯЁё0-9\\-\\.]", "_", title)
 
 
+class Gui:
+    def __init__(self):
+        self.url = ""
+        self.tournament_id = ""
+        self.venue_name = ""
+
+    def on_ok_button_click(self):
+        self.url = self.url_entry.get("1.0", "end-1c")
+        self.tournament_id = self.tournament_id_entry.get()
+        self.venue_name = self.venue_name_entry.get()
+        self.root.destroy()
+        self.root.quit()
+
+    def create_tk(self):
+        root = tk.Tk()
+        root.title("openquiz-export v{}".format(__version__))
+        self.root = root
+
+        url_label = tk.Label(root, text="URL:")
+        url_label.pack()
+        url_entry = tk.Text(root, height=10, width=60)
+        url_entry.pack()
+        self.url_entry = url_entry
+
+        tournament_id_label = tk.Label(root, text="Tournament ID:")
+        tournament_id_label.pack()
+        tournament_id_entry = tk.Entry(root)
+        tournament_id_entry.pack()
+        self.tournament_id_entry = tournament_id_entry
+
+        venue_name_label = tk.Label(root, text="Venue Name:")
+        venue_name_label.pack()
+        venue_name_entry = tk.Entry(root)
+        venue_name_entry.insert(0, "ХВИП")
+        venue_name_entry.pack()
+        self.venue_name_entry = venue_name_entry
+
+        ok_button = tk.Button(root, text="OK", command=self.on_ok_button_click)
+        ok_button.pack()
+        root.mainloop()
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("url")
+    parser.add_argument("--url", "-u", required=True)
     parser.add_argument("--tournament_id", "-t", type=int)
     parser.add_argument("--venue_name", "-v", default="ХВИП")
-    args = parser.parse_args()
+    use_wrapper = len(sys.argv) == 1 and TKINTER
+    if use_wrapper:
+        gui = Gui()
+        gui.create_tk()
+        if not gui.url:
+            print("Action cancelled.")
+            sys.exit(1)
+        gui_args = ["-u", gui.url.strip()]
+        if gui.tournament_id:
+            gui_args.extend(["-t", gui.tournament_id])
+        if gui.venue_name:
+            gui_args.extend(["-v", gui.venue_name])
+    else:
+        gui_args = []
+    args = parser.parse_args(gui_args or sys.argv[1:])
 
     parsed = urllib.parse.urlparse(args.url)
     qs = dict(urllib.parse.parse_qsl(parsed.query))

@@ -61,9 +61,10 @@ class WbMaker:
             print(f"getting results from {self.args.tournament_id}")
             rating_results = rating_get_results(self.args.tournament_id)
             for res in rating_results:
-                sr = res.get("synchRequest")
-                if not sr or sr["venue"]["name"] != self.args.venue_name:
-                    continue
+                if self.args.venue_name:
+                    sr = res.get("synchRequest")
+                    if not sr or sr["venue"]["name"] != self.args.venue_name:
+                        continue
                 name = res["current"]["name"]
                 self.team_dict[name.lower()] = TeamTuple(
                     id=res["team"]["id"], name=name, town=res["current"]["town"]["name"]
@@ -181,7 +182,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", "-u", required=True)
     parser.add_argument("--tournament_id", "-t", type=int)
-    parser.add_argument("--venue_name", "-v", default="ХВИП")
+    parser.add_argument("--venue_name", "-v")
     use_wrapper = len(sys.argv) == 1 and TKINTER
     if use_wrapper:
         first = True

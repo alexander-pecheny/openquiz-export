@@ -19,7 +19,7 @@ setup(
     description=long_description,
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://gitlab.com/peczony/openquiz-export",
+    url="https://code.pecheny.me/pecheny/openquiz-export",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

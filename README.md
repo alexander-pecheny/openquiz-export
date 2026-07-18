@@ -1,3 +1,5 @@
+> **Основной репозиторий этого проекта — https://code.pecheny.me/pecheny/openquiz-export, пожалуйста, создавайте issues там.**
+
 # openquiz-export
 
 Программа позволяет экспортировать результаты с [Опенквиза](https://open-quiz.com) в формат [турнирного сайта](https://rating.chgk.info).
